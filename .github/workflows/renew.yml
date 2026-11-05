@@ -1,0 +1,41 @@
+
+name: Katabump Auto Renew
+
+on:
+  schedule:
+    - cron: '17 12 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: katabump-renew
+  cancel-in-progress: false
+
+jobs:
+  renew-job:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install Playwright and Chromium
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install playwright
+          python -m playwright install --with-deps chromium
+
+      - name: Run renewal script
+        env:
+          KATABUMP_EMAIL: ${{ secrets.KATABUMP_EMAIL }}
+          KATABUMP_PASSWORD: ${{ secrets.KATABUMP_PASSWORD }}
+          SERVER_ID: ${{ secrets.SERVER_ID }}
+        run: python renew.py
